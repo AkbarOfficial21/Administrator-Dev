@@ -10,7 +10,18 @@
         body {
             font-family: Arial, sans-serif;
             text-align: left; /* Rata kiri */
+            font-size: 1.4rem;
             margin: 20px;
+            background-image: url('new.png'); /* Ganti dengan URL gambar Anda */
+            background-size: cover; /* Menutupi seluruh area */
+            background-position: center; /* Memusatkan gambar */
+            background-repeat: no-repeat; /* Tidak mengulang gambar */
+        }
+        h2 {
+            text-align: center; /* Memusatkan teks */
+            margin-bottom: 20px; /* Jarak bawah */
+            color: #020202; /* Warna teks putih untuk kontras */
+            font-size: 2rem;
         }
         #reader {
             width: 300px;
@@ -25,11 +36,11 @@
         }
         /* Gaya untuk info-section */
         .info-section {
-            margin-bottom: 20px; /* Tambahkan jarak antara bagian */
+            margin-bottom: 8px; /* Tambahkan jarak antara bagian */
             padding: 15px;
             border: 1px solid #ccc; /* Tambahkan border */
             border-radius: 5px; /* Tambahkan sudut melengkung */
-            background-color: #f9f9f9; /* Warna latar belakang */
+            background-color: rgb(255 255 255 / 15%); /* Warna latar belakang dengan transparansi */
         }
         .info-section label {
             font-weight: bold;
@@ -55,13 +66,13 @@
             padding: 15px;
             border: 1px solid #ccc; /* Tambahkan border */
             border-radius: 5px; /* Tambahkan sudut melengkung */
-            background-color: #f0f8ff; /* Warna latar belakang */
+            background-color: rgb(240 248 255 / 15%); /* Warna latar belakang dengan transparansi */
         }
         .scanner-section h3 {
             margin-top: 10px; /* Tambahkan jarak atas */
         }
         .scanner-section input {
-            /* width: calc(110% - 82px); */ /* Sesuaikan lebar form */
+            width: 100%; /* Sesuaikan lebar form */
             padding: 10px;
             margin-top: 5px; /* Gap 5px */
             box-sizing: border-box; /* Agar padding tidak menambah lebar */
@@ -92,16 +103,15 @@
         .large-input {
             width: 100%; /* Lebar 100% */
             padding: 10px; /* Padding lebih besar */
-            font-size: 15px; /* Ukuran font lebih besar */
+            font-size: 18px; /* Ukuran font lebih besar */
             border: 1px solid #007BFF; /* Border biru */
             border-radius: 4px; /* Sudut melengkung */
             box-sizing: border-box; /* Agar padding tidak menambah lebar */
-            margin-top: 5px; /* Jarak atas */
+            margin-top: -9px; /* Jarak atas */
         }
 
         .large-button {
             width: 100%; /* Lebar 100% */
-            padding: 10px; /* Padding lebih besar */
             font-size: 18px; /* Ukuran font lebih besar */
             background-color: #007BFF; /* Warna tombol biru */
             color: white; /* Warna teks putih */
@@ -112,6 +122,7 @@
         }
 
         .filter-label {
+            margin-top: 10px;
             font-weight: bold; /* Tebal */
             font-size: 18px; /* Ukuran font lebih besar */
         }
@@ -119,25 +130,47 @@
         .large-select {
             width: 100%; /* Lebar 100% */
             padding: 10px; /* Padding lebih besar */
-            font-size: 15px; /* Ukuran font lebih besar */
+            font-size: 18px; /* Ukuran font lebih besar */
             border: 1px solid #007BFF; /* Border biru */
             border-radius: 4px; /* Sudut melengkung */
             box-sizing: border-box; /* Agar padding tidak menambah lebar */
-            margin-top: 5px; /* Jarak atas */
+        }
+
+        .table-select {
+            width: 100%; /* Lebar 100% */
+            padding: 10px; /* Padding lebih besar */
+            font-size: 16px; /* Ukuran font lebih besar */
+            border: 1px solid #007BFF; /* Border biru */
+            border-radius: 4px; /* Sudut melengkung */
+            box-sizing: border-box; /* Agar padding tidak menambah lebar */
+            background: #ffffff36;
         }
 
         table {
-            width: 100%;
+            width: 100%; /* Lebar 100% */
             border-collapse: collapse;
             margin-top: 20px;
+            font-size: 18px; /* Ukuran font lebih besar */
         }
         th, td {
             border: 1px solid #ccc;
-            padding: 10px;
+            padding: 15px; /* Padding lebih besar */
             text-align: center; /* Mengatur teks header menjadi center */
+            background: #ffffff1f;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #9904ff;
+        }
+
+        /* Gaya untuk memusatkan tombol */
+        .button-container {
+            display: flex; /* Menggunakan flexbox */
+            justify-content: center; /* Memusatkan konten secara horizontal */
+            margin: 20px 0; /* Jarak atas dan bawah */
+        }
+
+        .button-container button {
+            margin: 0 10px; /* Jarak antar tombol */
         }
     </style>
 </head>
@@ -146,8 +179,10 @@
     
     <div class="info-section">
         <div id="reader"></div>
-        <button id="scan-btn">Mulai Scan</button>
-        <button id="stop-btn" style="display: none;">Stop Scan</button>
+        <div class="button-container">
+            <button id="scan-btn">Mulai Scan</button>
+            <button id="stop-btn" style="display: none;">Stop Scan</button>
+        </div>
 
         <h3>Input Manual Kode Kupon</h3>
         <input type="text" id="manualInput" class="large-input" placeholder="Masukkan kode kupon">
@@ -211,27 +246,29 @@
         }
 
         function updateKuponCount() {
-            let filteredKupon = kuponList.filter(k => loketFilter.value === "Tampilkan Semua" || k.loket === loketFilter.value);
+            let filteredKupon = kuponList.filter(k => loketFilter.value === "Tampilkan Semua" || k.loket.split(': ')[1] === loketFilter.value);
             totalKuponSpan.textContent = filteredKupon.length;
             usedKuponSpan.textContent = filteredKupon.filter(k => k.status === 'Sudah Digunakan').length;
             unusedKuponSpan.textContent = filteredKupon.filter(k => k.status === 'Belum Digunakan').length;
         }
 
         function renderTable() {
-            let filteredKupon = kuponList.filter(k => loketFilter.value === "Tampilkan Semua" || k.loket === loketFilter.value);
+            let filteredKupon = kuponList.filter(k => loketFilter.value === "Tampilkan Semua" || k.loket.split(': ')[1] === loketFilter.value);
             tableBody.innerHTML = '';
             filteredKupon.forEach((kupon, index) => {
                 let row = document.createElement("tr");
+                // Mengambil hanya nomor loket dari string "Loket : 01" menjadi "01"
+                let loketNumber = kupon.loket.split(': ')[1]; // Mengambil bagian setelah ": "
                 row.innerHTML = `
                     <td>${kupon.code}</td>
                     <td>
-                        <select onchange="changeStatus(${index}, this.value)">
+                        <select class="table-select" onchange="changeStatus(${index}, this.value)">
                             <option value="Belum Digunakan" ${kupon.status === 'Belum Digunakan' ? 'selected' : ''}>Belum Digunakan</option>
                             <option value="Sudah Digunakan" ${kupon.status === 'Sudah Digunakan' ? 'selected' : ''}>Sudah Digunakan</option>
                         </select>
                     </td>
                     <td>${kupon.timestamp}</td>
-                    <td>${kupon.loket}</td>
+                    <td>${loketNumber}</td> <!-- Menampilkan hanya nomor loket -->
                 `;
                 tableBody.appendChild(row);
             });
@@ -256,7 +293,7 @@
         }
 
         function populateLoketDropdown() {
-            let lokets = [...new Set(kuponList.map(k => k.loket))];
+            let lokets = [...new Set(kuponList.map(k => k.loket.split(': ')[1]))]; // Ambil hanya nomor loket
             lokets.unshift("Tampilkan Semua"); // Menambahkan opsi "Tampilkan Semua"
             loketFilter.innerHTML = lokets.map(l => `<option value="${l}">${l}</option>`).join("");
             loketFilter.addEventListener("change", renderTable);
@@ -329,7 +366,7 @@
                 const foundKupon = kuponList.find(k => k.code === searchCode);
                 if (foundKupon) {
                     // Memeriksa apakah loket sesuai dengan filter
-                    if (loketFilter.value === "Tampilkan Semua" || foundKupon.loket === loketFilter.value) {
+                    if (loketFilter.value === "Tampilkan Semua" || foundKupon.loket.split(': ')[1] === loketFilter.value) {
                         Swal.fire("Notifikasi", `Kupon ditemukan di ${foundKupon.loket}.`, "info");
                     } else {
                         Swal.fire("Notifikasi", `Kupon ditemukan, tetapi bukan di ${loketFilter.value}.`, "info");
