@@ -6,11 +6,11 @@
     <title>QR Code Scanner</title>
     <script src="https://unpkg.com/html5-qrcode" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: left; /* Rata kiri */
-            font-size: 1.4rem;
             margin: 20px;
             background-image: url('new.png'); /* Ganti dengan URL gambar Anda */
             background-size: cover; /* Menutupi seluruh area */
@@ -20,7 +20,7 @@
         h2 {
             text-align: center; /* Memusatkan teks */
             margin-bottom: 20px; /* Jarak bawah */
-            color: #020202; /* Warna teks putih untuk kontras */
+            color: #020202; /* Warna teks untuk kontras */
             font-size: 2rem;
         }
         #reader {
@@ -30,7 +30,7 @@
         }
         button {
             margin-top: 10px;
-            padding: 10px;
+            padding: 8px;
             font-size: 16px;
             cursor: pointer;
         }
@@ -40,7 +40,7 @@
             padding: 15px;
             border: 1px solid #ccc; /* Tambahkan border */
             border-radius: 5px; /* Tambahkan sudut melengkung */
-            background-color: rgb(255 255 255 / 15%); /* Warna latar belakang dengan transparansi */
+            background-color: rgba(249, 249, 249, 0.8); /* Warna latar belakang dengan transparansi */
         }
         .info-section label {
             font-weight: bold;
@@ -66,7 +66,7 @@
             padding: 15px;
             border: 1px solid #ccc; /* Tambahkan border */
             border-radius: 5px; /* Tambahkan sudut melengkung */
-            background-color: rgb(240 248 255 / 15%); /* Warna latar belakang dengan transparansi */
+            background-color: rgba(240, 248, 255, 0.8); /* Warna latar belakang dengan transparansi */
         }
         .scanner-section h3 {
             margin-top: 10px; /* Tambahkan jarak atas */
@@ -74,13 +74,12 @@
         .scanner-section input {
             width: 100%; /* Sesuaikan lebar form */
             padding: 10px;
-            margin-top: 5px; /* Gap 5px */
             box-sizing: border-box; /* Agar padding tidak menambah lebar */
             border: 1px solid #28a745; /* Border hijau */
             border-radius: 4px; /* Sudut melengkung */
         }
         .scanner-section button {
-            background-color: #28a745; /* Warna tombol hijau */
+            background-color: #28a74f; /* Warna tombol hijau */
             color: white; /* Warna teks putih */
             border: none; /* Tanpa border */
             border-radius: 4px; /* Sudut melengkung */
@@ -131,7 +130,7 @@
             width: 100%; /* Lebar 100% */
             padding: 10px; /* Padding lebih besar */
             font-size: 18px; /* Ukuran font lebih besar */
-            border: 1px solid #007BFF; /* Border biru */
+            border: 1px solid #ff0000; /* Border biru */
             border-radius: 4px; /* Sudut melengkung */
             box-sizing: border-box; /* Agar padding tidak menambah lebar */
         }
@@ -143,7 +142,6 @@
             border: 1px solid #007BFF; /* Border biru */
             border-radius: 4px; /* Sudut melengkung */
             box-sizing: border-box; /* Agar padding tidak menambah lebar */
-            background: #ffffff36;
         }
 
         table {
@@ -153,13 +151,12 @@
             font-size: 18px; /* Ukuran font lebih besar */
         }
         th, td {
-            border: 1px solid #ccc;
+            border: 1px solid #000000;
             padding: 15px; /* Padding lebih besar */
             text-align: center; /* Mengatur teks header menjadi center */
-            background: #ffffff1f;
         }
         th {
-            background-color: #9904ff;
+            background-color: #04c4ff;
         }
 
         /* Gaya untuk memusatkan tombol */
@@ -171,6 +168,26 @@
 
         .button-container button {
             margin: 0 10px; /* Jarak antar tombol */
+        }
+
+        /* Tambahkan CSS ini untuk mengatur lebar notifikasi SweetAlert2 */
+        .swal2-popup {
+            width: 1.3rem; /* Lebar notifikasi menjadi 1.3rem */
+            max-width: 100%; /* Pastikan tidak melebihi lebar layar */
+        }
+
+        .swal2-title {
+            font-size: 1.8rem; /* Ukuran huruf untuk judul */
+            margin-bottom: 10px; /* Jarak bawah judul */
+        }
+
+        .swal2-content {
+            font-size: 1.5rem; /* Ukuran huruf untuk konten */
+        }
+
+        .swal2-confirm, .swal2-cancel {
+            font-size: 1.5rem; /* Ukuran huruf untuk tombol */
+            padding: 10px 20px; /* Padding tombol */
         }
     </style>
 </head>
@@ -198,6 +215,7 @@
             <label for="loketFilter" class="filter-label">Filter:</label>
             <select id="loketFilter" class="large-select"></select>
             <button id="resetStatusBtn" class="large-button">Reset All Status</button>
+            <button id="downloadBtn" class="large-button">Download Data Excel</button>
         </div>
         
         <p><strong>Jumlah Kupon:</strong> <span id="totalKupon">0</span> | 
@@ -227,47 +245,68 @@
         const searchInput = document.getElementById("searchInput");
         const searchBtn = document.getElementById("searchBtn");
         const resetStatusBtn = document.getElementById("resetStatusBtn");
+        const downloadBtn = document.getElementById("downloadBtn");
         const tableBody = document.getElementById("kupon-table-body");
         const loketFilter = document.getElementById("loketFilter");
         const totalKuponSpan = document.getElementById("totalKupon");
         const usedKuponSpan = document.getElementById("usedKupon");
         const unusedKuponSpan = document.getElementById("unusedKupon");
 
-        let kuponList = JSON.parse(localStorage.getItem("kuponList")) || [
-            { code: '1.5BZR-qkzb', loket: 'Loket : 01', status: 'Belum Digunakan', timestamp: '-' },
-            { code: '2.5BZR-frzh', loket: 'Loket : 01', status: 'Belum Digunakan', timestamp: '-' },
-            { code: '3.5BZR-yuqd', loket: 'Loket : 02', status: 'Belum Digunakan', timestamp: '-' },
-            { code: '4.5BZR-xyxj', loket: 'Loket : 02', status: 'Sudah Digunakan', timestamp: '2023-10-01 10:00' },
-            { code: '5.5BZR-ojkh', loket: 'Loket : 03', status: 'Sudah Digunakan', timestamp: '2023-10-02 11:00' }
+        // Data kupon yang telah didefinisikan
+        let kuponList = [
+            { code: '1.5BZR-qkzb', loket: 'Loket : 01' },
+            { code: '2.5BZR-frzh', loket: 'Loket : 02' },
+            { code: '3.5BZR-yuqd', loket: 'Loket : 03' },
+            { code: '4.5BZR-xyxj', loket: 'Loket : 04' },
+            { code: '5.5BZR-ojkh', loket: 'Loket : 05' },
+            { code: '6.5BZR-jplm', loket: 'Loket : 06' },
+            { code: '7.5BZR-hevs', loket: 'Loket : 07' },
+            { code: '8.5BZR-qrwk', loket: 'Loket : 08' },
+            { code: '9.5BZR-jgfq', loket: 'Loket : 09' },
+            { code: '10.5BZR-uxti', loket: 'Loket : 10' },
+            { code: '11.5BZR-dbhk', loket: 'Loket : 11' },
+            { code: '12.5BZR-fqzg', loket: 'Loket : 12' },
+            { code: '13.5BZR-txrz', loket: 'Loket : 13' },
+            { code: '14.5BZR-mcea', loket: 'Loket : 14' },
+            { code: '15.5BZR-qzff', loket: 'Loket : 15' },
+            { code: '16.5BZR-wnby', loket: 'Loket : 16' },
+            { code: '17.5BZR-pbbw', loket: 'Loket : 17' },
+            { code: '18.5BZR-zvxt', loket: 'Loket : 18' },
+            { code: '19.5BZR-texo', loket: 'Loket : 19' },
+            { code: '20.5BZR-tyqv', loket: 'Loket : 20' }
         ];
 
-        function saveToStorage() {
-            localStorage.setItem("kuponList", JSON.stringify(kuponList));
+        // Load status dan timestamp dari local storage
+        let kuponStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
+
+        function updateLocalStorage() {
+            localStorage.setItem('kuponStatus', JSON.stringify(kuponStatus));
         }
 
         function updateKuponCount() {
             let filteredKupon = kuponList.filter(k => loketFilter.value === "Tampilkan Semua" || k.loket.split(': ')[1] === loketFilter.value);
             totalKuponSpan.textContent = filteredKupon.length;
-            usedKuponSpan.textContent = filteredKupon.filter(k => k.status === 'Sudah Digunakan').length;
-            unusedKuponSpan.textContent = filteredKupon.filter(k => k.status === 'Belum Digunakan').length;
+            usedKuponSpan.textContent = filteredKupon.filter(k => kuponStatus[k.code]?.status === 'Sudah Digunakan').length;
+            unusedKuponSpan.textContent = filteredKupon.filter(k => kuponStatus[k.code]?.status === 'Belum Digunakan' || !kuponStatus[k.code]).length;
         }
 
         function renderTable() {
             let filteredKupon = kuponList.filter(k => loketFilter.value === "Tampilkan Semua" || k.loket.split(': ')[1] === loketFilter.value);
             tableBody.innerHTML = '';
-            filteredKupon.forEach((kupon, index) => {
+            filteredKupon.forEach(kupon => {
                 let row = document.createElement("tr");
-                // Mengambil hanya nomor loket dari string "Loket : 01" menjadi "01"
+                let status = kuponStatus[kupon.code]?.status || 'Belum Digunakan';
+                let timestamp = kuponStatus[kupon.code]?.timestamp || '-';
                 let loketNumber = kupon.loket.split(': ')[1]; // Mengambil bagian setelah ": "
                 row.innerHTML = `
                     <td>${kupon.code}</td>
                     <td>
-                        <select class="table-select" onchange="changeStatus(${index}, this.value)">
-                            <option value="Belum Digunakan" ${kupon.status === 'Belum Digunakan' ? 'selected' : ''}>Belum Digunakan</option>
-                            <option value="Sudah Digunakan" ${kupon.status === 'Sudah Digunakan' ? 'selected' : ''}>Sudah Digunakan</option>
+                        <select class="table-select" onchange="changeStatus('${kupon.code}', this.value)" style="background-color: ${status === 'Sudah Digunakan' ? '#ffcccc' : '#ccffcc'}; color: black;">
+                            <option value="Belum Digunakan" ${status === 'Belum Digunakan' ? 'selected' : ''}>Belum Digunakan</option>
+                            <option value="Sudah Digunakan" ${status === 'Sudah Digunakan' ? 'selected' : ''}>Sudah Digunakan</option>
                         </select>
                     </td>
-                    <td>${kupon.timestamp}</td>
+                    <td>${timestamp}</td>
                     <td>${loketNumber}</td> <!-- Menampilkan hanya nomor loket -->
                 `;
                 tableBody.appendChild(row);
@@ -275,29 +314,64 @@
             updateKuponCount();
         }
 
-        function changeStatus(index, newStatus) {
-            kuponList[index].status = newStatus;
-            kuponList[index].timestamp = newStatus === 'Sudah Digunakan' ? new Date().toLocaleString() : '-';
-            saveToStorage();
+        function changeStatus(code, newStatus) {
+            kuponStatus[code] = {
+                status: newStatus,
+                timestamp: newStatus === 'Sudah Digunakan' ? new Date().toLocaleString() : '-'
+            };
+            updateLocalStorage(); // Update local storage
             renderTable();
         }
 
         function resetAllStatus() {
-            kuponList.forEach(kupon => {
-                kupon.status = 'Belum Digunakan';
-                kupon.timestamp = '-';
-            });
-            saveToStorage();
+            kuponStatus = {};
+            updateLocalStorage(); // Update local storage
             renderTable();
-            Swal.fire("Berhasil!", "Semua status kupon telah direset.", "success");
+            Swal.fire({
+                title: "Berhasil!",
+                text: "Semua status kupon telah direset.",
+                icon: "success",
+                width: '300px', // Ukuran SweetAlert2
+                padding: '1rem',
+                backdrop: true
+            });
         }
 
         function populateLoketDropdown() {
             let lokets = [...new Set(kuponList.map(k => k.loket.split(': ')[1]))]; // Ambil hanya nomor loket
             lokets.unshift("Tampilkan Semua"); // Menambahkan opsi "Tampilkan Semua"
             loketFilter.innerHTML = lokets.map(l => `<option value="${l}">${l}</option>`).join("");
-            loketFilter.addEventListener("change", renderTable);
-            renderTable();
+
+            // Ambil nilai filter dari localStorage
+            const savedFilter = localStorage.getItem('selectedLoket') || "Tampilkan Semua";
+            loketFilter.value = savedFilter; // Setel nilai dropdown
+
+            loketFilter.addEventListener("change", () => {
+                localStorage.setItem('selectedLoket', loketFilter.value); // Simpan filter ke localStorage
+                renderTable();
+            });
+            
+            renderTable(); // Render table setelah dropdown diisi
+        }
+
+        function downloadExcel() {
+            const selectedLoket = loketFilter.value;
+            const data = kuponList
+                .filter(kupon => selectedLoket === "Tampilkan Semua" || kupon.loket.split(': ')[1] === selectedLoket)
+                .map(kupon => {
+                    return {
+                        'CODE KUPON': kupon.code,
+                        'STATUS': kuponStatus[kupon.code]?.status || 'Belum Digunakan',
+                        'TIMESTAMP': kuponStatus[kupon.code]?.timestamp || '-',
+                        'LOKET': kupon.loket.split(': ')[1]
+                    };
+                });
+
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            const fileName = selectedLoket === "Tampilkan Semua" ? "Data All Loket.xlsx" : `Data Loket Nomor ${selectedLoket}.xlsx`;
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data Kupon");
+            XLSX.writeFile(workbook, fileName);
         }
 
         scanBtn.addEventListener("click", () => {
@@ -318,7 +392,14 @@
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                Swal.fire("Error", "Tidak dapat mengakses kamera!", "error");
+                Swal.fire({
+                    title: "Error",
+                    text: "Tidak dapat mengakses kamera!",
+                    icon: "error",
+                    width: '300px', // Ukuran SweetAlert2
+                    padding: '1rem',
+                    backdrop: true
+                });
                 stopScanning();
             });
         });
@@ -338,25 +419,86 @@
         function processScan(code) {
             let kupon = kuponList.find(k => k.code === code);
             if (kupon) {
-                if (kupon.loket !== loketFilter.value && loketFilter.value !== "Tampilkan Semua") {
-                    Swal.fire("Peringatan!", `Gunakan kupon ini di ${kupon.loket}.`, "warning");
-                } else if (kupon.status === 'Sudah Digunakan') {
-                    Swal.fire("Kupon Sudah Digunakan!", `Kupon ini sudah dipakai pada ${kupon.timestamp}.`, "warning");
+                if (kupon.loket.split(': ')[1] !== loketFilter.value && loketFilter.value !== "Tampilkan Semua") {
+                    Swal.fire({
+                        title: "Peringatan!",
+                        text: `Gunakan kupon ini di ${kupon.loket}.`,
+                        icon: "warning",
+                        width: '300px', // Ukuran SweetAlert2
+                        padding: '1rem',
+                        backdrop: true
+                    });
+                } else if (kuponStatus[kupon.code]?.status === 'Sudah Digunakan') {
+                    Swal.fire({
+                        title: "Kupon Sudah Digunakan!",
+                        text: `Kupon ini sudah dipakai pada ${kuponStatus[kupon.code].timestamp}.`,
+                        icon: "warning",
+                        width: '300px', // Ukuran SweetAlert2
+                        padding: '1rem',
+                        backdrop: true
+                    });
                 } else {
-                    kupon.status = 'Sudah Digunakan';
-                    kupon.timestamp = new Date().toLocaleString();
-                    saveToStorage();
-                    renderTable();
-                    Swal.fire("Berhasil!", "Kupon telah digunakan.", "success");
+                    changeStatus(kupon.code, 'Sudah Digunakan');
+                    Swal.fire({
+                        title: "Berhasil!",
+                        text: "Kupon telah digunakan.",
+                        icon: "success",
+                        width: '300px', // Ukuran SweetAlert2
+                        padding: '1rem',
+                        backdrop: true
+                    });
                 }
             } else {
-                Swal.fire("Error!", "Kupon tidak terdaftar!", "error");
+                Swal.fire({
+                    title: "Error!",
+                    text: "Kupon tidak terdaftar!",
+                    icon: "error",
+                    width: '300px', // Ukuran SweetAlert2
+                    padding: '1rem',
+                    backdrop: true
+                });
             }
         }
 
         manualSubmit.addEventListener("click", () => {
             let inputCode = manualInput.value.trim();
-            if (inputCode) processScan(inputCode);
+            if (inputCode) {
+                // Cek apakah kupon sudah ada
+                let existingKupon = kuponList.find(k => k.code === inputCode);
+                if (existingKupon) {
+                    // Cek apakah kupon sudah digunakan
+                    if (kuponStatus[existingKupon.code]?.status === 'Sudah Digunakan') {
+                        Swal.fire({
+                            title: "Kupon Sudah Digunakan!",
+                            text: `Kupon ini sudah dipakai pada ${kuponStatus[existingKupon.code].timestamp}.`,
+                            icon: "warning",
+                            width: '300px', // Ukuran SweetAlert2
+                            padding: '1rem',
+                            backdrop: true
+                        });
+                    } else {
+                        Swal.fire({
+                            html: `Gunakan Kupon Pada Loket <b>${loketFilter.value}</b>!<br>Kupon ditemukan, tetapi bukan di loket <b>${loketFilter.value}</b>.`,
+                            icon: "error",
+                            width: "300px",
+                            padding: "1rem",
+                            backdrop: true
+                        });
+                    }
+                } else {
+                    // Tambahkan kupon baru
+                    kuponList.push({ code: inputCode, loket: 'Loket : 01' });
+                    renderTable();
+                    Swal.fire({
+                        title: "Berhasil!",
+                        text: "Kupon baru telah ditambahkan.",
+                        icon: "success",
+                        width: '300px', // Ukuran SweetAlert2
+                        padding: '1rem',
+                        backdrop: true
+                    });
+                }
+            }
             manualInput.value = "";
         });
 
@@ -367,21 +509,57 @@
                 if (foundKupon) {
                     // Memeriksa apakah loket sesuai dengan filter
                     if (loketFilter.value === "Tampilkan Semua" || foundKupon.loket.split(': ')[1] === loketFilter.value) {
-                        Swal.fire("Notifikasi", `Kupon ditemukan di ${foundKupon.loket}.`, "info");
+                        let status = kuponStatus[foundKupon.code]?.status || 'Belum Digunakan';
+                        let timestamp = kuponStatus[foundKupon.code]?.timestamp || '-';
+                        Swal.fire({
+                            title: "Notifikasi",
+                            text: `Kupon ditemukan di ${foundKupon.loket}. 
+                                   CODE KUPON: ${foundKupon.code} 
+                                   STATUS: ${status} 
+                                   TIMESTAMP: ${timestamp}`,
+                            icon: "info",
+                            width: '300px', // Ukuran SweetAlert2
+                            padding: '1rem',
+                            backdrop: true
+                        });
                     } else {
-                        Swal.fire("Notifikasi", `Kupon ditemukan, tetapi bukan di ${loketFilter.value}.`, "info");
+                        Swal.fire({
+                            title: "Notifikasi",
+                            html: `<b>CODE</b> <br> <br> <b>${foundKupon.code}</b> <br> <br>
+                                Kupon ditemukan, tetapi bukan di loket <b>${loketFilter.value}</b>.`,
+                            icon: "info",
+                            width: '300px', // Ukuran SweetAlert2
+                            padding: '1rem',
+                            backdrop: true
+                        });
                     }
                 } else {
-                    Swal.fire("Error!", "Kupon tidak terdaftar!", "error");
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Kupon tidak terdaftar!",
+                        icon: "error",
+                        width: '300px', // Ukuran SweetAlert2
+                        padding: '1rem',
+                        backdrop: true
+                    });
                 }
             } else {
-                Swal.fire("Error!", "Masukkan kode kupon untuk mencari.", "error");
+                Swal.fire({
+                    title: "Error!",
+                    text: "Masukkan kode kupon untuk mencari.",
+                    icon: "error",
+                    width: '300px', // Ukuran SweetAlert2
+                    padding: '1rem',
+                    backdrop: true
+                });
             }
         });
 
         resetStatusBtn.addEventListener("click", resetAllStatus);
+        downloadBtn.addEventListener("click", downloadExcel);
 
         populateLoketDropdown();
+        renderTable(); // Render table saat halaman dimuat
     </script>
 </body>
 </html>
